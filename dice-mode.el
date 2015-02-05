@@ -100,7 +100,8 @@
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header))
 
-(defun dice-mode-eval-line ()
+;;TODO: bind
+(defun dice-mode-roll-selected ()
   (interactive)
   (let* ((row (tabulated-list-get-entry))
          (name (elt row 0))
@@ -109,9 +110,33 @@
     (tabulated-list-set-col "Result" (dice-mode-render (dice-mode-roll-spec spec)))))
 
 ;;TODO: this mode can't set a value when its blank/nil?
-
+;;TODO: drop this?
 (defun dice-mode-fill ()
   (interactive)
-  (setq tabulated-list-entries (list
-                (list "1" ["Scimitar" "1D20" "Never Rolled"])))
+  (setq tabulated-list-entries nil)
   (tabulated-list-print t))
+
+;;TODO: bind
+(defun dice-mode-delete-dice ()
+  (interactive)
+  (tabulated-list-delete-entry))
+
+(defvar-local current-id 0)
+
+;; (defun dice-mode-add-dice (name specstr)
+(defun dice-mode-add-dice ()
+  (interactive) ;;probably a diff kind
+  (setq current-id (+ current-id 1))
+  (tabulated-list-print-entry (number-to-string current-id) ["foo" "1d20" "N/A"])
+  )
+
+
+(defvar dice-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "n" 'next-line)
+    (define-key map "p" 'previous-line)
+    (define-key map (kbd "C-c C-n") 'dice-mode-add-dice)
+    (define-key map (kbd "C-c C-k") 'dice-mode-delete-dice)
+    (define-key map (kbd "C-c C-r") 'dice-mode-roll-selected)
+    map)
+  "Local keymap for `dice-mode' buffers.")
