@@ -4,46 +4,114 @@
 (require 'dash)
 (require 's)
 
+
+(defstruct dice-mode-result
+  rolls-before
+  rolls-after
+  mod
+  total)
+
+(defun dice-mode-roll-spec (spec)
+  "Roll a dice spec"
+  (let* ((rolls-before (dice-mode-roll-many (dice-mode-spec-count spec) (dice-mode-spec-sides spec)))
+         (km (dice-mode-spec-keepmode spec))
+         (kc (dice-mode-spec-keepcount spec))
+         (rolls-after (cond ((string= km "h") (dice-mode-keep-highest kc rolls-before))
+                            ((string= km "l") (dice-mode-keep-lowest kc rolls-before))
+                            (t rolls-before)))
+         (mod (dice-mode-spec-mod spec))
+         (total (+ mod (-sum rolls-after))))
+    (make-dice-mode-result :rolls-before rolls-before
+                           :rolls-after rolls-after
+                           :mod mod
+                           :total total)))
+
+(defun dice-mode-render (result)
+  "Render a roll result into a string"
+  (interactive)
+  (format "%s => %s + %s => %s"
+          (dice-mode-result-rolls-before result)
+          (dice-mode-result-rolls-after result)
+          (dice-mode-result-mod result)
+          (dice-mode-result-total result)))
+
 (defun dice-mode-roll (sides)
   "Roll a dice with the given number of SIDES."
   (interactive)
-  (+ 1 (random sides))
-  )
+  (+ 1 (random sides)))
 
 (defun dice-mode-roll-many (count sides)
   "Roll the COUNT dice with the given number of SIDES."
   (interactive)
   (let (results)
     (dotimes (_ count results)
-      (setq results (cons (dice-mode-roll sides) results)))
-    ))
+      (setq results (cons (dice-mode-roll sides) results)))))
 
 
 (defun dice-mode-keep-highest (count results)
   "Keep the highest COUNT results in the list. Common with advantage rolls."
   (interactive)
-  (-take count (-sort '> results))
-  )
+  (-take count (-sort '> results)))
 
 (defun dice-mode-keep-lowest (count results)
   "Keep the lowest COUNT results in the list. Common with disadvantage rolls."
   (interactive)
-  (-take count (-sort '< results))
-  )
+  (-take count (-sort '< results)))
 
-(defstruct dice-mode-spec count sides)
+(defstruct dice-mode-spec
+  name
+  (count 1)
+  (sides 20)
+  (mod 0)
+  keepmode
+  keepcount)
 
 
-(defun dice-mode-parse-roll-string (string)
-  "Parses STRING into a dice-mode-roll"
+(defun dice-mode-parse-roll-string (string &optional name)
+  "Parses STRING into a dice-mode-roll-spec"
   (interactive)
   (let* ((matches (s-match (rx bol
                                (group (zero-or-more digit))
                                "d"
                                (group (one-or-more digit))
+                               (optional (char ?+ ?-) (group (one-or-more digit)))
+                               (optional (group (char ?h ?l)) (group (one-or-more digit)))
                                eol) string))
          (caps (cdr matches))
-         (count (string-to-number (car caps)))
-         (sides (string-to-number (car (cdr caps)))))
-    (make-dice-mode-spec :count count :sides sides)))
+         (count (string-to-number (elt caps 0)))
+         (sides (string-to-number (elt caps 1)))
+         (mod (string-to-number (or (elt caps 2) "0")))
+         (keepmode (elt caps 3))
+         (keepcount (if (elt caps 4) (string-to-number (elt caps 4)))))
+    (make-dice-mode-spec :name (or name string)
+                         :count count
+                         :sides sides
+                         :mod mod
+                         :keepmode keepmode
+                         :keepcount keepcount)))
 
+
+(define-derived-mode dice-mode tabulated-list-mode "dice-mode" "A mode for making dice rolls"
+  (setq tabulated-list-format [("Name" 18 nil)
+                               ("Dice" 12 nil)
+                               ("Result"  10 nil)
+                               ])
+  (setq tabulated-list-padding 2)
+  (setq tabulated-list-sort-key nil)
+  (tabulated-list-init-header))
+
+(defun dice-mode-eval-line ()
+  (interactive)
+  (let* ((row (tabulated-list-get-entry))
+         (name (elt row 0))
+         (dice (elt row 1))
+         (spec (dice-mode-parse-roll-string dice name)))
+    (tabulated-list-set-col "Result" (dice-mode-render (dice-mode-roll-spec spec)))))
+
+;;TODO: this mode can't set a value when its blank/nil?
+
+(defun dice-mode-fill ()
+  (interactive)
+  (setq tabulated-list-entries (list
+                (list "1" ["Scimitar" "1D20" "Never Rolled"])))
+  (tabulated-list-print t))

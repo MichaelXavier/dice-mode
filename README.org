@@ -1,0 +1,6 @@
+* Tasks
+** TODO tabulated-list-mode
+   https://www.gnu.org/software/emacs/manual/html_node/elisp/Tabulated-List-Mode.html
+   apparently package.el uses it?
+** TODO Tests
+** TODO Simple editing
