@@ -4,3 +4,17 @@
    apparently package.el uses it?
 ** TODO Tests
 ** TODO Simple editing
+** TODO Saving
+   Save as an sexp of the table
+   get-buffer-create
+   dice-mode reads buffer into variable, runs tabulated-list-print
+
+   (let ((list '(1 2 3)))
+   (with-temp-file "/tmp/nemesisd"
+   (print list (current-buffer))))
+
+   use read on the other side
+
+   use write-contents-hooks, buffer-file-name gets you the file they
+   wanted to save. return non-nil and it will consider it saved
+** TODO Saving doesn't mark the buffer as saved, seems like

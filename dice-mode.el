@@ -98,9 +98,24 @@
                                ])
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key nil)
-  (tabulated-list-init-header))
+  (setq tabulated-list-entries (dice-mode-load)) ;; need to hook in before tabulated-list-mode dicks with the buffer
+  (setq write-contents-hooks '(dice-mode-save))
+  (tabulated-list-init-header)
+  (tabulated-list-print t)
+  )
 
-;;TODO: bind
+
+(defun dice-mode-save ()
+  (let ((entries tabulated-list-entries))
+    (with-temp-file (buffer-file-name)
+      (print entries (current-buffer)))
+    t
+    ))
+
+(defun dice-mode-load ()
+  (ignore-errors (read (buffer-string)))
+  )
+
 (defun dice-mode-roll-selected ()
   (interactive)
   (let* ((row (tabulated-list-get-entry))
@@ -109,25 +124,22 @@
          (spec (dice-mode-parse-roll-string dice name)))
     (tabulated-list-set-col "Result" (dice-mode-render (dice-mode-roll-spec spec)))))
 
-;;TODO: this mode can't set a value when its blank/nil?
-;;TODO: drop this?
-(defun dice-mode-fill ()
-  (interactive)
-  (setq tabulated-list-entries nil)
-  (tabulated-list-print t))
 
-;;TODO: bind
 (defun dice-mode-delete-dice ()
   (interactive)
-  (tabulated-list-delete-entry))
+  (let* ((id (tabulated-list-get-id)))
+    (setq tabulated-list-entries (-remove (lambda (l) (string= id (car l))) tabulated-list-entries))
+    (tabulated-list-print t)
+    ))
 
 (defvar-local current-id 0)
 
-;; (defun dice-mode-add-dice (name specstr)
-(defun dice-mode-add-dice ()
-  (interactive) ;;probably a diff kind
+(defun dice-mode-add-dice (name specstr)
+  (interactive "sName: \nsDice (e.g. 1d20+2l1): ")
   (setq current-id (+ current-id 1))
-  (tabulated-list-print-entry (number-to-string current-id) ["foo" "1d20" "N/A"])
+  (setq tabulated-list-entries
+        (-snoc tabulated-list-entries (list (number-to-string current-id)  (vector name specstr "N/A"))))
+  (tabulated-list-print t)
   )
 
 
