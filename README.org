@@ -1,10 +1,13 @@
 * Tasks
-** TODO tabulated-list-mode
+** DONE tabulated-list-mode
+   CLOSED: [2015-03-07 Sat 15:48]
    https://www.gnu.org/software/emacs/manual/html_node/elisp/Tabulated-List-Mode.html
    apparently package.el uses it?
 ** TODO Tests
-** TODO Simple editing
-** TODO Saving
+** DONE Simple editing
+   CLOSED: [2015-03-07 Sat 15:48]
+** DONE Saving
+   CLOSED: [2015-03-07 Sat 15:48]
    Save as an sexp of the table
    get-buffer-create
    dice-mode reads buffer into variable, runs tabulated-list-print
@@ -18,3 +21,5 @@
    use write-contents-hooks, buffer-file-name gets you the file they
    wanted to save. return non-nil and it will consider it saved
 ** TODO Saving doesn't mark the buffer as saved, seems like
+** TODO Add list parsing?
+** TODO key binds don't work?

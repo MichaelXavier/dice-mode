@@ -66,17 +66,19 @@
   keepmode
   keepcount)
 
-
-(defun dice-mode-parse-roll-string (string &optional name)
-  "Parses STRING into a dice-mode-roll-spec"
-  (interactive)
-  (let* ((matches (s-match (rx bol
+;;TODO: is setq the right thing?
+(setq dice-mode-expr-regex (rx bol
                                (group (zero-or-more digit))
                                "d"
                                (group (one-or-more digit))
                                (optional (char ?+ ?-) (group (one-or-more digit)))
                                (optional (group (char ?h ?l)) (group (one-or-more digit)))
-                               eol) string))
+                               eol))
+
+(defun dice-mode-parse-roll-string (string &optional name)
+  "Parses STRING into a dice-mode-roll-spec"
+  (interactive)
+  (let* ((matches (s-match dice-mode-expr-regex string))
          (caps (cdr matches))
          (count (string-to-number (elt caps 0)))
          (sides (string-to-number (elt caps 1)))
@@ -141,6 +143,24 @@
         (-snoc tabulated-list-entries (list (number-to-string current-id)  (vector name specstr "N/A"))))
   (tabulated-list-print t)
   )
+
+(defun dice-mode-eval-expr (&optional specstr)
+  "Evaluate the dice expression at point. As long as your point
+is anywhere inside a valid dice expression, this should work."
+  (interactive (list
+                (read-string (format "Dice expr (%s): " (dice-mode-expr-at-point))
+                             nil nil (dice-mode-expr-at-point)
+                             )))
+  (message (dice-mode-render (dice-mode-roll-spec (dice-mode-parse-roll-string specstr)))))
+
+
+(defun dice-mode-expr-at-point ()
+  "Capture the dice mode expression at point"
+  (interactive)
+  (save-excursion
+    (skip-chars-backward "0123456789dD+-hlHL")
+    (or (car (s-match dice-mode-expr-regex (buffer-substring-no-properties (point) (line-end-position))))
+        (error "Not a dice mode expr."))))
 
 
 (defvar dice-mode-map
